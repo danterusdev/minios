@@ -1,19 +1,22 @@
-char* VIDEO_MEMORY;
+#include "driver/screen.h"
+#include "driver/port.h"
+#include "interrupt.h"
 
 void write_string(char* string) {
+    char* video_memory = (char*) 0xb8000;
     int i = 0;
     while (string[i] != 0) {
-        VIDEO_MEMORY[i * 2] = string[i];
+        video_memory[i * 2] = string[i];
         i++;
     }
 }
 
 void kernel_main() {
-    VIDEO_MEMORY = (char*) 0xb8000;
+    kclear();
+    kprint("Loaded Kernel\n");
 
-    for (int i = 0; i < 2000; i++) {
-        VIDEO_MEMORY[i * 2] = '\0';
-    }
+    load_idt();
+    asm volatile ("sti");
 
-    write_string("Hello Kernel!");
+    kprint("Loaded interrupt descriptor table\n");
 }
