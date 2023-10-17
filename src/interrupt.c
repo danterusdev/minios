@@ -1,8 +1,8 @@
 #include "driver/port.h"
 #include "interrupt.h"
 
-static IDT_Entry idt[256];
-static IDT_Register idtr;
+IDT_Entry idt[256];
+IDT_Register idtr;
 
 void idt_set_gate(u8 vector, void* subroutine) {
     IDT_Entry* gate = &idt[vector];
@@ -121,7 +121,20 @@ void isr_handler(Registers registers) {
     asm volatile ("hlt");
 }
 
+#define PIC_INTERRUPTS_START 0x20
+
+void (*irq_handlers[16])();
+
+void register_irq_handler(u8 vector, void (*handler)()) {
+    irq_handlers[vector - PIC_INTERRUPTS_START] = handler;
+}
+
 void irq_handler(Registers registers) {
     if (registers.int_no >= 40) port_write_byte(0xA0, 0x20);
     port_write_byte(0x20, 0x20);
+
+    void (*handler)() = irq_handlers[registers.int_no - PIC_INTERRUPTS_START];
+    if (handler != 0) {
+        handler();
+    }
 }

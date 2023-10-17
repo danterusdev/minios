@@ -11,34 +11,51 @@
 #define CURSOR_CONTROL_LOW_BYTE 0xF
 
 #define SCREEN_WIDTH 80
-#define SCREEN_HEIGHT 80
+#define SCREEN_HEIGHT 25
 
 u16 cursor;
 
-void kprint(char* message) {
-    u8 i = 0;
-    while (message[i] != 0) {
-        char character = message[i];
+void set_character(u16 location, u8 character) {
+    VIDEO_MEMORY[location * 2] = character;
+}
 
-        switch (character) {
-            case '\n':
-                // FIXME: does not work at the very start of a line
-                cursor += SCREEN_WIDTH - cursor % SCREEN_WIDTH;
-                break;
-            default:
-                VIDEO_MEMORY[cursor * 2] = message[i];
-                VIDEO_MEMORY[cursor * 2 + 1] = 0x0F;
-                cursor++;
+u8 get_character(u16 location) {
+    return VIDEO_MEMORY[location * 2];
+}
+
+void set_format(u16 location, u8 format) {
+    VIDEO_MEMORY[location * 2 + 1] = format;
+}
+
+void check_scroll() {
+    if (cursor / SCREEN_WIDTH >= SCREEN_HEIGHT) {
+        for (u16 i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++) {
+            set_character(i, get_character(i + SCREEN_WIDTH));
         }
 
+        cursor -= SCREEN_WIDTH;
+    }
+}
+
+void kprint(char* message, bool newline) {
+    u8 i = 0;
+    while (message[i] != '\0') {
+        set_character(cursor, message[i]);
+        set_format(cursor, 0x0F);
+        cursor++;
         i++;
+    }
+
+    if (newline) {
+        cursor += SCREEN_WIDTH - cursor % SCREEN_WIDTH;
+        check_scroll();
     }
     kset_cursor_location(cursor);
 }
 
 void kclear() {
     for (u16 i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++) {
-        VIDEO_MEMORY[i * 2] = ' ';
+        set_character(i, ' ');
     }
     cursor = 0;
     kset_cursor_location(cursor);
