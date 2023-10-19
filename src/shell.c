@@ -1,5 +1,5 @@
 #include "driver/screen.h"
-#include "string.h"
+#include "util/string.h"
 
 static char shell_buffer[128];
 static u8 shell_buffer_index;
@@ -84,12 +84,15 @@ void shell_submit_command() {
     }
 }
 
+#define BACKSPACE_SCANCODE 0x0E
+#define ENTER_SCANCODE 0x1C
+
 void shell_handle_key(u16 scancode) {
     char character = key_to_char(scancode);
 
     kset_cursor_location(shell_prompt_location);
 
-    if (scancode == 0x0E) {
+    if (scancode == BACKSPACE_SCANCODE) {
         if (shell_buffer_index > 0) {
             shell_buffer_index--;
             shell_buffer[shell_buffer_index] = '\0';
@@ -109,7 +112,7 @@ void shell_handle_key(u16 scancode) {
 
     kset_cursor_location(cursor);
 
-    if (scancode == 0x1C) {
+    if (scancode == ENTER_SCANCODE) {
         kprint("", true);
 
         shell_submit_command();

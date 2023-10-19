@@ -1,12 +1,27 @@
 nasm src/boot/boot_sector.asm -f bin -o boot_sector.bin
 nasm src/boot/kernel_entry.asm -f elf -o src/boot/kernel_entry.o
 nasm src/interrupt_handlers.asm -f elf -o src/interrupt_handlers.o
-gcc -m32 -fno-pie -o src/kernel.o -fno-stack-protector -ffreestanding -c src/kernel.c
-gcc -m32 -fno-pie -o src/interrupt.o -fno-stack-protector -ffreestanding -c src/interrupt.c
-gcc -m32 -fno-pie -o src/driver/port.o -fno-stack-protector -ffreestanding -c src/driver/port.c
-gcc -m32 -fno-pie -o src/driver/screen.o -fno-stack-protector -ffreestanding -c src/driver/screen.c
-gcc -m32 -fno-pie -o src/driver/keyboard.o -fno-stack-protector -ffreestanding -c src/driver/keyboard.c
-gcc -m32 -fno-pie -o src/shell.o -fno-stack-protector -ffreestanding -c src/shell.c
-gcc -m32 -fno-pie -o src/string.o -fno-stack-protector -ffreestanding -c src/string.c
-ld -m elf_i386 -o kernel.bin -Ttext 0x1000 --oformat binary src/boot/kernel_entry.o src/kernel.o src/interrupt.o src/driver/port.o src/driver/screen.o src/driver/keyboard.o src/shell.o src/string.o src/interrupt_handlers.o
+
+C_SOURCES=(
+    src/kernel
+    src/interrupt
+    src/driver/port
+    src/driver/screen
+    src/driver/keyboard
+    src/shell
+    src/util/string
+)
+
+for c_source in ${C_SOURCES[@]}; do
+    gcc -m32 -fno-pie -o $c_source.o -fno-stack-protector -ffreestanding -c $c_source.c
+done
+
+LINK_COMMAND="ld -m elf_i386 -o kernel.bin -Ttext 0x1000 --oformat binary src/boot/kernel_entry.o src/interrupt_handlers.o"
+
+for c_source in ${C_SOURCES[@]}; do
+    LINK_COMMAND="$LINK_COMMAND $c_source.o"
+done
+
+$LINK_COMMAND
+
 cat boot_sector.bin kernel.bin > minios.bin

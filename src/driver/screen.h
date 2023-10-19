@@ -1,4 +1,4 @@
-#include "../types.h"
+#include "../util/types.h"
 
 void kprint(char* message, bool newline);
 void kclear();
