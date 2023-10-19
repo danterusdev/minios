@@ -61,10 +61,26 @@ void kclear() {
     kset_cursor_location(cursor);
 }
 
-void kset_cursor_location(u16 cursor) {
+void kset_cursor_location(u16 cursor_in) {
     port_write_byte(CURSOR_CONTROL_PORT, CURSOR_CONTROL_HIGH_BYTE);
-    port_write_byte(CURSOR_DATA_PORT, cursor >> 8);
+    port_write_byte(CURSOR_DATA_PORT, cursor_in >> 8);
 
     port_write_byte(CURSOR_CONTROL_PORT, CURSOR_CONTROL_LOW_BYTE);
-    port_write_byte(CURSOR_DATA_PORT, cursor & 0xFF);
+    port_write_byte(CURSOR_DATA_PORT, cursor_in & 0xFF);
+
+    cursor = cursor_in;
+}
+
+u16 kget_cursor_location() {
+    u16 cursor;
+
+    port_write_byte(CURSOR_CONTROL_PORT, CURSOR_CONTROL_HIGH_BYTE);
+    cursor = port_read_byte(CURSOR_DATA_PORT);
+
+    cursor = cursor << 8;
+
+    port_write_byte(CURSOR_CONTROL_PORT, CURSOR_CONTROL_LOW_BYTE);
+    cursor += port_read_byte(CURSOR_DATA_PORT);
+
+    return cursor;
 }
